@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お問い合わせフォーム</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f6f8;
+            font-family: sans-serif;
+        }
+        .page-header-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-step-page {
+            display: none;
+        }
+        .form-step-page.active-page {
+            display: block;
+        }
+
+        /* 進行バーのアニメーション対応デザイン */
+        .step-bar {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
+        .step-bar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 30px;
+            right: 30px;
+            height: 4px;
+            background-color: #e9ecef;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        .step-progress-line {
+            position: absolute;
+            top: 50%;
+            left: 30px;
+            height: 4px;
+            background-color: #20c997;
+            transform: translateY(-50%);
+            z-index: 2;
+            width: 0%;
+            transition: width 0.4s ease-in-out;
+        }
+        .step {
+            position: relative;
+            z-index: 3;
+            background: #fff;
+            padding: 0 5px;
+            text-align: center;
+        }
+        .step-num {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            color: #adb5bd;
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 5px;
+            transition: all 0.3s ease;
+        }
+        .step-label {
+            display: block;
+            font-size: 11px;
+            color: #adb5bd;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        .step.active .step-num,
+        .step.completed .step-num {
+            background-color: #20c997;
+            color: white;
+            box-shadow: 0 0 10px rgba(32, 201, 151, 0.4);
+        }
+        .step.active .step-label,
+        .step.completed .step-label {
+            color: #20c997;
+        }
+
+        .notice-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .notice-box h3 {
+            font-size: 14px;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .notice-box ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .agree-option, .anonymous-option {
+            background-color: #f0f7f4;
+            border: 1px solid #b2dfdb;
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+        .checkbox-container {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: white;
+            margin-right: 6px;
+        }
+        .badge.required { background-color: #ff6b6b; }
+        .badge.optional { background-color: #cccccc; }
+
+        input[type="text"], input[type="email"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            background-color: #fafafa;
+        }
+        input[type="text"]:focus, input[type="email"]:focus, textarea:focus {
+            border-color: #20c997;
+            outline: none;
+            background-color: #fff;
+        }
+        input:disabled {
+            background-color: #eee !important;
+            cursor: not-allowed;
+            color: #888;
+        }
+
+        .title-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        .title-area h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        .text-back-btn {
+            position: absolute;
+            left: 0;
+            background: #f1f3f5;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #495057;
+            transition: background 0.2s;
+        }
+        .text-back-btn:hover {
+            background: #e2e6ea;
+        }
+
+        .next-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            background-color: #20c997;
+            color: white;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+        .next-btn:hover { background-color: #17a57a; }
+        .next-btn:disabled {
+            background-color: #cccccc !important;
+            cursor: not-allowed;
+        }
+
+        .secondary-btn {
+            background-color: #f1f3f5;
+            color: #495057;
+            border: 1px solid #ced4da;
+        }
+        .secondary-btn:hover {
+            background-color: #e2e6ea;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #ff4d4f;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .confirm-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .confirm-item {
+            margin-bottom: 15px;
+        }
+        .confirm-item:last-child {
+            margin-bottom: 0;
+        }
+        .confirm-label {
+            font-size: 12px;
+            color: #888;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .confirm-value {
+            font-size: 15px;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .complete-box, .error-box {
+            text-align: center;
+            padding: 30px 10px;
+        }
+        .complete-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #e6fcf5;
+            color: #20c997;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px;
+            border: 2px solid #20c997;
+        }
+        .error-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #fff5f5;
+            color: #ff6b6b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto 20px;
+            border: 2px solid #ff6b6b;
+            font-weight: bold;
+        }
+        .complete-box h3, .error-box h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .complete-box p, .error-box p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .error-code {
+            display: inline-block;
+            background-color: #fff5f5;
+            color: #ff4d4f;
+            border: 1px dashed #ff4d4f;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .form-footer-logo {
+            margin-top: 25px;
+            text-align: center;
+        }
+        .form-footer-logo img {
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header-title">お問い合わせフォーム</div>
+
+<div class="form-card">
+    <div class="step-bar" id="stepBar">
+        <div class="step-progress-line" id="progressLine"></div>
+        <div class="step active" id="barStep1"><span class="step-num">1</span><span class="step-label">同意</span></div>
+        <div class="step" id="barStep2"><span class="step-num">2</span><span class="step-label">お客様情報</span></div>
+        <div class="step" id="barStep3"><span class="step-num">3</span><span class="step-label">内容</span></div>
+        <div class="step" id="barStep4"><span class="step-num">4</span><span class="step-label">確認・送信</span></div>
+    </div>
+
+    <!-- ページ1：注意事項と同意 -->
+    <div id="page1" class="form-step-page active-page">
+        <h2>送信時の注意事項とご同意</h2>
+        <div class="notice-box" style="margin-top: 20px;">
+            <h3>【ご利用前の注意事項】</h3>
+            <ul>
+                <li>当フォームでのスパム送信はおやめください。</li>
+                <li>お客様情報画面で「匿名表記で送信する」にチェックを入れると、独自ルールに基づきお名前が暗号化されます。</li>
+                <li>ご入力いただいた内容は、お問い合わせ対応の目的以外には使用いたしません。</li>
+                <li>虚偽情報や不適切な内容の送信はご遠慮ください
+                    
+                </li>
+            </ul>
+        </div>
+        <div class="agree-option">
+            <label class="checkbox-container">
+                <input type="checkbox" id="agreeCheck">
+                <strong>上記の注意事項に同意します</strong>
+            </label>
+        </div>
+        <button type="button" class="next-btn" id="toPage2Btn" disabled>次へ進む</button>
+    </div>
+
+    <!-- ページ2：お客様情報 -->
+    <div id="page2" class="form-step-page">
+        <div class="title-area">
+            <button type="button" class="text-back-btn" id="backToPage1">◀ 戻る</button>
+            <h2>お客様情報入力。</h2>
+        </div>
+        
+        <div class="anonymous-option">
+            <label class="checkbox-container">
+                <input type="checkbox" id="anonymousCheck">
+                <strong>匿名表記で送信する</strong>（お名前を公開されたくない方向けの機能。）
+            </label>
+        </div>
+
+        <div class="input-group">
+            <label><span class="badge required">必須</span> お名前</label>
+            <input type="text" id="userName" placeholder="例：山田 太郎" required>
+        </div>
+
+        <div class="input-group">
+            <label><span class="badge required">必須</span> メールアドレス</label>
+            <input type="email" id="userEmail" placeholder="example@email.com" required>
+        </div>
+
+        <div id="page2Error" class="error-message"></div>
+        <button type="button" class="next-btn" id="toPage3Btn">お問い合わせ入力へ</button>
+    </div>
+
+    <!-- ページ3：お問い合わせ内容入力 -->
+    <div id="page3" class="form-step-page">
+        <div class="title-area">
+            <button type="button" class="text-back-btn" id="backToPage2">◀ 戻る</button>
+            <h2>お問い合わせ内容</h2>
+        </div>
+
+        <div class="input-group">
+            <label><span class="badge required">必須</span> お問い合わせ件名</label>
+            <input type="text" id="subject" placeholder="例：サービスに関するご質問" required>
+        </div>
+
+        <div class="input-group">
+            <label><span class="badge required">必須</span> お問い合わせ内容詳細</label>
+            <textarea id="messageDetail" rows="6" placeholder="こちらにご用件を詳しくご記入ください" required></textarea>
+        </div>
+
+        <div id="page3Error" class="error-message"></div>
+        <button type="button" class="next-btn" id="toPage4Btn">確認画面へ</button>
+    </div>
+
+    <!-- ページ4：入力内容確認画面 -->
+    <div id="page4" class="form-step-page">
+        <div class="title-area">
+            <button type="button" class="text-back-btn" id="backToPage3">◀ 戻る</button>
+            <h2>入力内容の確認</h2>
+        </div>
+
+        <p style="font-size: 13px; color: #666; margin-bottom: 20px; text-align: center;">以下の内容で間違いがなければ「送信する」を押してください。</p>
+
+        <div class="confirm-box">
+            <div class="confirm-item">
+                <div class="confirm-label">お名前</div>
+                <div class="confirm-value" id="confName">-</div>
+            </div>
+            <div class="confirm-item">
+                <div class="confirm-label">メールアドレス</div>
+                <div class="confirm-value" id="confEmail">-</div>
+            </div>
+            <div class="confirm-item">
+                <div class="confirm-label">お問い合わせ件名</div>
+                <div class="confirm-value" id="confSubject">-</div>
+            </div>
+            <div class="confirm-item">
+                <div class="confirm-label">お問い合わせ内容詳細</div>
+                <div class="confirm-value" id="confMessage" style="white-space: pre-wrap;">-</div>
+            </div>
+        </div>
+
+        <button type="button" class="next-btn" id="submitFormBtn" style="background-color: #007bff;">送信する</button>
+    </div>
+
+    <!-- 送信完了画面 -->
+    <div id="pageComplete" class="form-step-page">
+        <div class="complete-box">
+            <div class="complete-icon">✓</div>
+            <h3>送信が完了いたしました</h3>
+            <p>お問い合わせいただきありがとうございます。<br>内容を確認のうえ、担当者よりご連絡いたします。</p>
+            <button type="button" class="next-btn" id="reloadBtn" style="background-color: #6c757d;">トップへ戻る</button>
+        </div>
+    </div>
+
+    <!-- 送信エラー画面 -->
+    <div id="pageError" class="form-step-page">
+        <div class="error-box">
+            <div class="error-icon">!</div>
+            <h3>送信に失敗しました</h3>
+            <div class="error-code" id="errorDisplayCode">E-0356</div>
+            <p id="errorDisplayText">エラーが発生しました。ネットワーク環境をご確認のうえ、もう一度お試しください。</p>
+            
+            <!-- 確認画面に戻るボタン -->
+            <button type="button" class="next-btn" id="retryBtn" style="background-color: #20c997;">確認画面に戻って再送する</button>
+            
+            <!-- 問題が解決しない場合のリンクボタン（指定のGoogleドキュメントへ誘導） -->
+            <a href="https://docs.google.com/document/d/1bVtXyWsqWYK2JSyD8sGWJ763OGeqQ8rFm-UVB6yFpF0/edit?tab=t.0" target="_blank" class="next-btn secondary-btn" style="margin-top: 12px;">問題が解決しない場合</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="form-footer-logo">
+    <img src="logo.png" alt="Taku6315 ロゴ">
+</div>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxJ0gklFKI2KrfJPPyrNiNE2cKA0DNTXbRg4SsHDvQPaDywKY4Ovw_i2JT-5pVYcw0qhA/exec';
+
+    const page1 = document.getElementById('page1');
+    const page2 = document.getElementById('page2');
+    const page3 = document.getElementById('page3');
+    const page4 = document.getElementById('page4');
+    const pageComplete = document.getElementById('pageComplete');
+    const pageError = document.getElementById('pageError');
+    const stepBar = document.getElementById('stepBar');
+    const progressLine = document.getElementById('progressLine');
+
+    const barStep1 = document.getElementById('barStep1');
+    const barStep2 = document.getElementById('barStep2');
+    const barStep3 = document.getElementById('barStep3');
+    const barStep4 = document.getElementById('barStep4');
+
+    const agreeCheck = document.getElementById('agreeCheck');
+    const toPage2Btn = document.getElementById('toPage2Btn');
+
+    const anonymousCheck = document.getElementById('anonymousCheck');
+    const userNameInput = document.getElementById('userName');
+    const userEmailInput = document.getElementById('userEmail');
+    const backToPage1 = document.getElementById('backToPage1');
+    const toPage3Btn = document.getElementById('toPage3Btn');
+    const page2Error = document.getElementById('page2Error');
+
+    const backToPage2 = document.getElementById('backToPage2');
+    const subjectInput = document.getElementById('subject');
+    const messageDetailInput = document.getElementById('messageDetail');
+    const toPage4Btn = document.getElementById('toPage4Btn');
+    const page3Error = document.getElementById('page3Error');
+
+    const backToPage3 = document.getElementById('backToPage3');
+    const submitFormBtn = document.getElementById('submitFormBtn');
+    const reloadBtn = document.getElementById('reloadBtn');
+    const retryBtn = document.getElementById('retryBtn');
+
+    const errorDisplayCode = document.getElementById('errorDisplayCode');
+    const errorDisplayText = document.getElementById('errorDisplayText');
+
+    const confName = document.getElementById('confName');
+    const confEmail = document.getElementById('confEmail');
+    const confSubject = document.getElementById('confSubject');
+    const confMessage = document.getElementById('confMessage');
+
+    function updateStep(stepNum) {
+        const percentages = ['0%', '33%', '66%', '100%'];
+        progressLine.style.width = percentages[stepNum - 1];
+
+        [barStep1, barStep2, barStep3, barStep4].forEach((el, index) => {
+            el.classList.remove('active', 'completed');
+            if (index + 1 < stepNum) {
+                el.classList.add('completed');
+            } else if (index + 1 === stepNum) {
+                el.classList.add('active');
+            }
+        });
+    }
+
+    agreeCheck.addEventListener('change', function() {
+        toPage2Btn.disabled = !this.checked;
+    });
+
+    toPage2Btn.addEventListener('click', function() {
+        page1.classList.remove('active-page');
+        page2.classList.add('active-page');
+        updateStep(2);
+    });
+
+    backToPage1.addEventListener('click', function() {
+        page2.classList.remove('active-page');
+        page1.classList.add('active-page');
+        updateStep(1);
+    });
+
+    const customCipherMap = {
+        'あ': '@', 'ア': '@', 'a': '@', 'A': '@',
+        'い': '8', 'イ': '8', 'i': '8', 'I': '8',
+        'う': '7', 'ウ': '7', 'u': '7', 'U': '7',
+        'え': '3', 'エ': '3', 'e': '3', 'E': '3',
+        'お': '#', 'オ': '#', 'o': '#', 'O': '#',
+    };
+
+    function encryptText(text) {
+        let result = '';
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            if (customCipherMap[char]) {
+                result += customCipherMap[char];
+            } else if (char === ' ') {
+                result += ' ';
+            } else {
+                result += '*';
+            }
+        }
+        return 'ENC[' + result + '!]';
+    }
+
+    let originalName = '';
+
+    anonymousCheck.addEventListener('change', function() {
+        if (this.checked) {
+            if (userNameInput.value.trim() !== '') {
+                originalName = userNameInput.value;
+                userNameInput.value = encryptText(originalName);
+                userNameInput.disabled = true;
+            }
+        } else {
+            userNameInput.value = originalName;
+            userNameInput.disabled = false;
+        }
+    });
+
+    toPage3Btn.addEventListener('click', function() {
+        page2Error.style.display = 'none';
+
+        if (anonymousCheck.checked && originalName.trim() === '') {
+            page2Error.textContent = 'お名前を入力してから匿名表記をご利用ください。';
+            page2Error.style.display = 'block';
+            anonymousCheck.checked = false;
+            userNameInput.disabled = false;
+            return;
+        }
+
+        if (!userNameInput.value.trim() || !userEmailInput.value.trim()) {
+            page2Error.textContent = 'お名前とメールアドレスを正しく入力してください。';
+            page2Error.style.display = 'block';
+            return;
+        }
+
+        page2.classList.remove('active-page');
+        page3.classList.add('active-page');
+        updateStep(3);
+    });
+
+    backToPage2.addEventListener('click', function() {
+        page3.classList.remove('active-page');
+        page2.classList.add('active-page');
+        updateStep(2);
+    });
+
+    toPage4Btn.addEventListener('click', function() {
+        page3Error.style.display = 'none';
+
+        if (!subjectInput.value.trim() || !messageDetailInput.value.trim()) {
+            page3Error.textContent = '件名と内容詳細を入力してください。';
+            page3Error.style.display = 'block';
+            return;
+        }
+
+        confName.textContent = userNameInput.value;
+        confEmail.textContent = userEmailInput.value;
+        confSubject.textContent = subjectInput.value;
+        confMessage.textContent = messageDetailInput.value;
+
+        page3.classList.remove('active-page');
+        page4.classList.add('active-page');
+        updateStep(4);
+    });
+
+    backToPage3.addEventListener('click', function() {
+        page4.classList.remove('active-page');
+        page3.classList.add('active-page');
+        updateStep(3);
+    });
+
+    submitFormBtn.addEventListener('click', function() {
+        submitFormBtn.disabled = true;
+        submitFormBtn.innerHTML = '<span class="spinner"></span> 送信中...';
+
+        const formData = {
+            name: userNameInput.value,
+            email: userEmailInput.value,
+            subject: subjectInput.value,
+            message: messageDetailInput.value
+        };
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        }).then(() => {
+            page4.classList.remove('active-page');
+            stepBar.style.display = 'none';
+            pageComplete.classList.add('active-page');
+        }).catch((error) => {
+            page4.classList.remove('active-page');
+            stepBar.style.display = 'none';
+
+            if (!navigator.onLine) {
+                errorDisplayCode.textContent = 'E-0321';
+                errorDisplayText.textContent = 'インターネットに接続されていません。ネットワーク環境をご確認ください。';
+            } else {
+                errorDisplayCode.textContent = 'E-0356';
+                errorDisplayText.textContent = '送信処理中に予期せぬエラーが発生しました。時間をおいてもう一度お試しください。';
+            }
+
+            pageError.classList.add('active-page');
+            
+            submitFormBtn.disabled = false;
+            submitFormBtn.innerHTML = '送信する';
+        });
+    });
+
+    reloadBtn.addEventListener('click', function() {
+        location.reload();
+    });
+
+    retryBtn.addEventListener('click', function() {
+        pageError.classList.remove('active-page');
+        stepBar.style.display = 'flex';
+        page4.classList.add('active-page');
+        updateStep(4);
+    });
+</script>
+</body>
+</html>
